@@ -22,7 +22,7 @@ Deformable DETR通过multi-scale deformable attention在训练慢与小规模物
 DETR在获取backbone输出时仅获取了最后一层的feature map，没有利用到多尺度信息。deformable attention则从backbone获取了4个不同尺度的特征图（resnet c3/c4/c5, c3+c4+c5输出由1\*1 conv与Transformer hidden size对齐得到各边尺寸为input 1/8, 1/16, 1/32的feature map，c5输出再由3\*3,stride=2 conv获取尺寸为1/64的feature map），送入encoder进行多尺度计算，具体计算过程在2中给出。
 
 2.deformable attention
-![[DeformAttn.png]]
+![image](DeformAttn.png)
 传统attention模块（self/cross）中单个query需要与全部可能的key计算attention score，而deformable attention提出对于单个query $z_q$ , 在每个head中对每个层次的feature map取n_points（可取3或4）个点作为value，再做weighted sum即可，从而大幅节省了计算时间。attention score与value均由$z_q$ 经过linear projection（score还需加softmax）得到。
 
 在cross attention中，$z_q$ 需要先由初始的object query经过linear projection预测得到reference point（feature map中的某个点，同时也是此query代表的预测框的中心坐标），reference point对应位置的feature map向量即为$z_q$。在不使用iterative bbox refinement技巧时，每个object query对应的reference point在每个forward过程的初始已经确定，在每一层中都不变。下面介绍使用上述技巧，在每一层中不断调整reference point。
